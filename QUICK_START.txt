@@ -1,0 +1,217 @@
+╔════════════════════════════════════════════════════════════════╗
+║      TASMA BOARD ROOM BOOKING SYSTEM - QUICK START GUIDE        ║
+║                     Version 2.0 Enhanced Edition                 ║
+╚════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🚀 QUICK START - 3 SIMPLE STEPS                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+STEP 1: INSTALL DEPENDENCIES
+  Open Command Prompt and run:
+  
+  pip install tkcalendar
+
+STEP 2: RUN THE APPLICATION
+  Run:
+  
+  python main.py
+
+STEP 3: START BOOKING!
+  The application window opens automatically
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTATION FILES                                           │
+└─────────────────────────────────────────────────────────────────┘
+
+README.md
+  → Complete user guide
+  → How to use each feature
+  → Troubleshooting tips
+
+FEATURES.md
+  → Detailed feature documentation
+  → Technical improvements
+  → Database schema
+
+ENHANCEMENT_SUMMARY.md
+  → What was added (v1.0 → v2.0)
+  → Bug fixes
+  → UI improvements
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🎯 MAIN FEATURES AT A GLANCE                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+✅ Create Bookings - Fill form, click "Book Room"
+✅ Edit Bookings - Select booking, click "Edit Selected"
+✅ Delete Bookings - Select booking, click "Delete Selected"
+✅ Search Bookings - Type in search box (real-time)
+✅ Sort Columns - Click column header
+✅ Export to CSV - Click "Export to CSV"
+✅ Professional UI - Modern design with colors
+✅ Validation - Prevents errors and duplicates
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🎨 TWO MAIN TABS                                                │
+└─────────────────────────────────────────────────────────────────┘
+
+TAB 1: NEW BOOKING
+  • Create new bookings
+  • Edit existing bookings (select first, then edit)
+  • Clear form button
+  
+TAB 2: MANAGE BOOKINGS
+  • View all bookings
+  • Search and filter
+  • Sort by any column
+  • Delete bookings
+  • Export to CSV
+  • Refresh list
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ⏱️ QUICK TASK GUIDE                                              │
+└─────────────────────────────────────────────────────────────────┘
+
+CREATE A BOOKING:
+  1. Click "New Booking" tab
+  2. Click date field → select date
+  3. Enter time (format: 14:30)
+  4. Select department from dropdown
+  5. Enter user name
+  6. Enter meeting reason
+  7. Click "Book Room"
+
+EDIT A BOOKING:
+  1. Click "Manage Bookings" tab
+  2. Click the booking you want to edit
+  3. Click "New Booking" tab
+  4. Click "Edit Selected"
+  5. Modify the details
+  6. Click "Book Room" to save
+
+FIND A BOOKING:
+  1. Click "Manage Bookings" tab
+  2. Type search term (any partial match works)
+  3. Results filter automatically
+  4. Clear search to see all
+
+EXPORT BOOKINGS:
+  1. Click "Manage Bookings" tab
+  2. Click "Export to CSV"
+  3. Choose filename and location
+  4. Open in Excel
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🎨 BUTTON COLORS & FUNCTIONS                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+🟢 GREEN BUTTON "Book Room"
+   → Create new booking or save edited booking
+
+🟠 ORANGE BUTTON "Edit Selected"
+   → Edit a selected booking from the list
+
+🟣 PURPLE BUTTON "Clear Form"
+   → Clear all form fields and reset
+
+🔵 BLUE BUTTON "Refresh List"
+   → Reload all bookings from database
+
+🔴 RED BUTTON "Delete Selected"
+   → Remove a selected booking (with confirmation)
+
+🔵 CYAN BUTTON "Export to CSV"
+   → Export all bookings to Excel file
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ⚙️ SYSTEM REQUIREMENTS                                            │
+└─────────────────────────────────────────────────────────────────┘
+
+✅ Python 3.7 or newer
+✅ Windows, Mac, or Linux
+✅ 50 MB disk space
+✅ No internet connection needed
+✅ No special admin rights needed
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 💾 DATA STORAGE                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+Database File: bookings.db
+Location: Same folder as main.py
+Backup: Copy bookings.db to safe location
+Restore: Replace bookings.db with backup copy
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ❓ FAQ - COMMON QUESTIONS                                        │
+└─────────────────────────────────────────────────────────────────┘
+
+Q: What time format should I use?
+A: Use 24-hour format HH:MM (e.g., 09:30, 14:45, 17:00)
+
+Q: How do I edit a booking?
+A: 1) Go to Manage tab, 2) Click the booking, 3) Go to New Booking
+   tab, 4) Click "Edit Selected", 5) Click "Book Room" to save
+
+Q: Can I export bookings?
+A: Yes! Click "Export to CSV" in Manage Bookings tab
+
+Q: What if I accidentally delete a booking?
+A: Restore from bookings.db backup (if you have one)
+
+Q: How do I search for bookings?
+A: Type in the search box - it filters in real-time
+
+Q: Can multiple people book at same time?
+A: The system warns you if time slot is taken
+
+Q: What departments are available?
+A: Finance, HR, IT, Marketing, Operations, Sales, Other
+
+Q: Can I run multiple instances?
+A: Yes, but they'll share the same database
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🆘 NEED HELP?                                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+Module not found error?
+  → Run: pip install tkcalendar
+
+Application won't start?
+  → Check Python version (python --version)
+  → Ensure tkcalendar is installed
+
+Database locked error?
+  → Close all instances of the app
+  → Try again
+
+Time validation error?
+  → Use HH:MM format (e.g., 14:30, not 2:30 PM)
+
+For detailed help:
+  → Read README.md (user guide)
+  → Read FEATURES.md (technical details)
+  → Read ENHANCEMENT_SUMMARY.md (changes made)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 📞 CONTACT & SUPPORT                                             │
+└─────────────────────────────────────────────────────────────────┘
+
+For support questions, contact the development team.
+
+┌─────────────────────────────────────────────────────────────────┐
+│ ✨ YOU'RE ALL SET!                                               │
+└─────────────────────────────────────────────────────────────────┘
+
+Your enhanced TASMA Booking System is ready to use!
+
+Start by running:  python main.py
+
+Enjoy the improved interface, new features, and professional design!
+
+╔════════════════════════════════════════════════════════════════╗
+║   Version 2.0 | Enhanced Edition | Production Ready            ║
+║          Enjoy your booking system! 🎉                          ║
+╚════════════════════════════════════════════════════════════════╝

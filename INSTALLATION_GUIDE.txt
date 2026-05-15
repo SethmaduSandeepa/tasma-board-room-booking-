@@ -1,0 +1,135 @@
+╔════════════════════════════════════════════════════════════════╗
+║   TASMA BOARD ROOM BOOKING SYSTEM - PROFESSIONAL DEPLOYMENT    ║
+║                    Quick Start Guide                            ║
+╚════════════════════════════════════════════════════════════════╝
+
+🚀 BUILD STANDALONE APPLICATION (3 EASY STEPS)
+────────────────────────────────────────────────
+
+STEP 1: Double-click "build_deployment_package.bat"
+        
+        This script will automatically:
+        ✓ Install Python dependencies
+        ✓ Create standalone executable (.exe)
+        ✓ Package files for distribution
+        ✓ Create deployment folder
+
+STEP 2: Wait for completion (2-5 minutes)
+        
+        You'll see progress messages:
+        [1/5] Installing dependencies...
+        [2/5] Installing PyInstaller...
+        [3/5] Creating standalone executable...
+        [4/5] Creating deployment folders...
+        [5/5] Generating summary...
+
+STEP 3: Find your files in the "deployment" folder
+        
+        Contents:
+        ├── TASMA Board Room Booking System.exe (THE MAIN APP)
+        ├── bookings.db (DATABASE)
+        ├── tasma_logo.webp (LOGO)
+        └── DEPLOYMENT_GUIDE.md (FULL INSTRUCTIONS)
+
+
+💻 DISTRIBUTION OPTIONS
+────────────────────────
+
+OPTION 1: Simple (No Installation)
+  → Copy "deployment\TASMA Board Room Booking System.exe" to other computers
+  → Users double-click to run
+  → No installation required
+  → Perfect for: USB drives, network shares, direct execution
+
+OPTION 2: Professional (With Installer)
+  ① Install NSIS from https://nsis.sourceforge.io/
+  ② Open Command Prompt and run:
+     "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+  ③ Creates: TASMA_Booking_System_Installer.exe
+  → Users run installer
+  → Creates Start Menu shortcuts
+  → Creates Desktop shortcut
+  → Appears in Control Panel
+
+
+📋 SYSTEM REQUIREMENTS FOR END USERS
+────────────────────────────────────
+
+✓ Windows 7 or newer
+✓ 50-100 MB disk space
+✓ 256+ MB RAM
+✓ No Python installation needed!
+
+
+🔧 TROUBLESHOOTING
+──────────────────
+
+❌ "Python not found" error
+   ✓ Install Python from https://www.python.org/
+   ✓ Check "Add Python to PATH" during installation
+   ✓ Restart your computer
+   ✓ Try again
+
+❌ Permission denied errors
+   ✓ Right-click "build_deployment_package.bat"
+   ✓ Select "Run as administrator"
+
+❌ PyInstaller installation fails
+   ✓ Open Command Prompt as Administrator
+   ✓ Run: pip install --upgrade pip
+   ✓ Run: pip install pyinstaller
+
+❌ Build takes too long (>10 minutes)
+   ✓ This is normal - PyInstaller bundles everything
+   ✓ First build is slower
+   ✓ Let it complete
+
+
+📁 DEPLOYMENT FOLDER STRUCTURE
+──────────────────────────────
+
+deployment/
+├── TASMA Board Room Booking System.exe  ← MAIN APPLICATION
+├── bookings.db                          ← DATABASE
+├── tasma_logo.webp                      ← LOGO
+└── DEPLOYMENT_GUIDE.md                  ← FULL DOCUMENTATION
+
+
+🌐 SHARED DATABASE SETUP (For Office Networks)
+──────────────────────────────────────────────
+
+If multiple users need to share the same database:
+
+1. Place "bookings.db" on network share
+   Example: \\\\server\\shared\\tasma\\bookings.db
+
+2. Edit main.py (before building):
+   Find: self.db_name = "bookings.db"
+   Change to: self.db_name = "\\\\SERVER_NAME\\share\\path\\bookings.db"
+
+3. Rebuild using build_deployment_package.bat
+
+
+✨ WHAT'S INCLUDED
+──────────────────
+
+✓ Standalone .exe (no Python needed)
+✓ Complete database
+✓ Professional installer option
+✓ Desktop and Start Menu shortcuts
+✓ Uninstaller for easy removal
+✓ No dependencies required on end-user machines
+
+
+📞 SUPPORT
+──────────
+
+For detailed instructions: Read DEPLOYMENT_GUIDE.md
+For feature documentation: Read FEATURES.md
+For user guide: Read README.md
+
+
+Version: 2.0 Professional
+Last Updated: May 15, 2026
+
+Enjoy your deployment! 🎉
