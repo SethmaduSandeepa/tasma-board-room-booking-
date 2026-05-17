@@ -1975,10 +1975,10 @@ class TasmaBookingApp:
         
         # Check for overlapping bookings
         if self._check_overlap(date, time, duration_minutes, self.selected_booking_id):
-            if not messagebox.askyesno("Overlap Warning", 
-                "Another booking exists at this time.\nContinue anyway?"):
-                self.update_status("Booking cancelled")
-                return
+            messagebox.showerror("Booking Error", 
+                "Another booking already exists at this time.\nPlease select a different time.")
+            self.update_status("Booking failed - time slot already booked")
+            return
         
         # Retry logic for database operations with exponential backoff
         max_retries = 10
