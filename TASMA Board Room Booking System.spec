@@ -5,8 +5,8 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('E:\\tasma_booking_syst\\tasma_logo.webp', '.'), ('E:\\tasma_booking_syst\\bookings.db', '.')],
-    hiddenimports=['PIL'],
+    datas=[('tasma_logo.webp', '.'), ('booking_icon.ico', '.'), ('config.ini', '.')],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['E:\\tasma_booking_syst\\tasma_logo.webp'],
+    icon=['booking_icon.ico'],
 )

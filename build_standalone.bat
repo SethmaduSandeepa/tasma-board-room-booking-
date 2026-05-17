@@ -19,13 +19,15 @@ echo.
 echo Building standalone executable...
 echo.
 
-REM Build the executable
+REM Build the executable with server deployment optimization
 pyinstaller --onefile ^
     --windowed ^
     --name "TASMA Board Room Booking System" ^
-    --icon=tasma_logo.webp ^
+    --icon=booking_icon.ico ^
     --add-data "tasma_logo.webp;." ^
+    --add-data "booking_icon.ico;." ^
     --add-data "bookings.db;." ^
+    --add-data "config.ini;." ^
     --distpath "./dist" ^
     --workpath "./build" ^
     --specpath "./build" ^

@@ -9,6 +9,13 @@ import time
 from tkcalendar import DateEntry, Calendar
 from PIL import Image, ImageTk
 
+# Import optimized database module for server deployment
+try:
+    from db_optimized import get_db
+    USE_OPTIMIZED_DB = True
+except ImportError:
+    USE_OPTIMIZED_DB = False
+
 class TimePickerWidget(tk.Frame):
     """A simple time picker with spinboxes for hours and minutes"""
     def __init__(self, parent, hour=0, minute=0, on_time_changed=None, **kwargs):
@@ -306,10 +313,52 @@ class LoginWindow:
         admin_btn.pack(fill="x")
     
     def init_database(self):
-        """Create users and requests tables"""
+        """Create users and requests tables - uses optimized database when available"""
         import sys
-        import os
         import shutil
+        
+        # Initialize optimized database if available (server deployment)
+        if USE_OPTIMIZED_DB:
+            try:
+                db = get_db()
+                # Ensure tables exist
+                db.execute_update('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT UNIQUE NOT NULL,
+                        full_name TEXT,
+                        password TEXT NOT NULL,
+                        department TEXT,
+                        role TEXT DEFAULT 'user'
+                    )
+                ''')
+                
+                db.execute_update('''
+                    CREATE TABLE IF NOT EXISTS user_requests (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT UNIQUE NOT NULL,
+                        full_name TEXT,
+                        password TEXT NOT NULL,
+                        department TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        status TEXT DEFAULT 'pending'
+                    )
+                ''')
+                
+                # Ensure at least one admin exists
+                result = db.execute_query("SELECT COUNT(*) FROM users WHERE role='admin'", fetch='one')
+                if result and result[0] == 0:
+                    admin_pass = self.hash_password("admin")
+                    db.execute_update(
+                        "INSERT INTO users (username, full_name, password, role) VALUES (?, ?, ?, ?)",
+                        ("admin", "Administrator", admin_pass, "admin")
+                    )
+                return
+            except Exception as e:
+                print(f"Warning: Could not use optimized database: {e}")
+                # Fall through to standard sqlite3
+        
+        # Standard SQLite implementation (fallback)
         # Get the directory where the app/executable is located
         if getattr(sys, 'frozen', False):
             # Running as PyInstaller bundle - store database in AppData for write permissions
