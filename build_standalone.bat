@@ -19,19 +19,28 @@ echo.
 echo Building standalone executable...
 echo.
 
-REM Build the executable with server deployment optimization
+REM Clean old build artifacts
+if exist "build" rmdir /s /q "build" >nul 2>&1
+if exist "dist" rmdir /s /q "dist" >nul 2>&1
+
+REM Get the current directory as absolute path
+for /f "delims=" %%A in ('cd') do set PROJ_DIR=%%A
+
+REM Build the executable with server deployment optimization using absolute paths
 pyinstaller --onefile ^
     --windowed ^
     --name "TASMA Board Room Booking System" ^
-    --icon=booking_icon.ico ^
-    --add-data "tasma_logo.webp;." ^
-    --add-data "booking_icon.ico;." ^
-    --add-data "bookings.db;." ^
-    --add-data "config.ini;." ^
-    --distpath "./dist" ^
-    --workpath "./build" ^
-    --specpath "./build" ^
-    main.py
+    --icon=%PROJ_DIR%\booking_icon.ico ^
+    --add-data "%PROJ_DIR%\tasma_logo.webp;." ^
+    --add-data "%PROJ_DIR%\booking_icon.ico;." ^
+    --add-data "%PROJ_DIR%\bookings.db;." ^
+    --add-data "%PROJ_DIR%\config.ini;." ^
+    --add-data "%PROJ_DIR%\db_optimized.py;." ^
+    --distpath "%PROJ_DIR%\dist" ^
+    --workpath "%PROJ_DIR%\build" ^
+    --specpath "%PROJ_DIR%" ^
+    --clean ^
+    %PROJ_DIR%\main.py
 
 if errorlevel 1 (
     echo Build failed!

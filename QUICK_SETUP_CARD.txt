@@ -1,0 +1,152 @@
+# TASMA v2.2 - Quick Setup Card (Print This!)
+
+---
+
+## 📋 FOR SERVER ADMIN
+
+### Step 1️⃣ - Initialize Database (One-time)
+```
+1. Go to: C:\Program Files\TASMA Board Room Booking System\
+2. Find: SETUP_SERVER.py
+3. Double-click to run
+4. Wait for: ✓ Database initialization complete!
+```
+
+### Step 2️⃣ - Add Users (Repeat for each user)
+```
+1. Go to: C:\Program Files\TASMA Board Room Booking System\
+2. Find: ADD_USER_TO_SERVER.py
+3. Double-click to run
+4. Fill in:
+   Username: sandeepa
+   Password: password123
+   Full Name: Sandeepa Kumar
+   Department: IT
+5. See: ✓ User created successfully!
+```
+
+### Step 3️⃣ - Share Credentials with Users
+```
+Send to each user:
+  - Username (from Step 2)
+  - Password (from Step 2)
+  - Tell them to install TASMA and login
+```
+
+---
+
+## 📋 FOR END USERS
+
+### Step 1️⃣ - Install TASMA
+```
+1. Download: TASMA_User_Setup_v2.2.exe
+2. Double-click to run installer
+3. Click: Next, Next, Install, Finish
+```
+
+### Step 2️⃣ - First-Run Setup (Automatic)
+```
+1. Installer finishes
+2. Setup wizard appears automatically
+3. Shows: "✓ Network path accessible"
+4. Shows: "✓ Database connection successful"
+5. Shows: "✓ Configuration saved"
+6. Click: "Continue to Login"
+```
+
+### Step 3️⃣ - Login
+```
+1. TASMA login window appears
+2. Enter Username: sandeepa (from admin)
+3. Enter Password: password123 (from admin)
+4. Click: Login
+5. See: "Welcome Sandeepa Kumar!" ✓
+```
+
+---
+
+## ✅ Success Signs
+
+- ✓ App launches instantly (no delays)
+- ✓ Logo displays nicely
+- ✓ Username/password works
+- ✓ See welcome message with your name
+- ✓ Can see booking rooms and calendar
+
+---
+
+## ⚠️ If Something Goes Wrong
+
+| Problem | Fix |
+|---------|-----|
+| "Invalid username" | Admin needs to run ADD_USER_TO_SERVER.py |
+| "Network path not found" | Check server is on: `ping GVBSERVER` |
+| "Database connection failed" | Wait 10 seconds, try again |
+| "Still old error" | Delete local database, restart app |
+
+---
+
+## 📞 Flowchart
+
+```
+┌─ Admin runs SETUP_SERVER.py (server)
+│  └─ Creates database
+│
+├─ Admin runs ADD_USER_TO_SERVER.py (server) × N times
+│  └─ Creates: sandeepa, john, mary, admin, etc.
+│
+├─ Users install TASMA_User_Setup_v2.2.exe (client)
+│  └─ Auto setup wizard configures connection
+│
+└─ Users login with admin credentials
+   └─ ✓ Welcome [name]!
+```
+
+---
+
+## 🎯 Timeline
+
+| Step | Computer | Time | Tool |
+|------|----------|------|------|
+| 1 | Server | 1 min | SETUP_SERVER.py |
+| 2 | Server | 30 sec each | ADD_USER_TO_SERVER.py |
+| 3 | Client | 5 min | TASMA_User_Setup_v2.2.exe |
+| 4 | Client | 10 sec | TASMA.exe (login) |
+
+**Total**: ~10 minutes for full setup per user
+
+---
+
+## 🔗 Connection Path
+
+```
+User Computer
+    ↓
+TASMA.exe (client)
+    ↓
+config.ini (server path)
+    ↓
+\\GVBSERVER\C$\Program Files\TASMA Board Room Booking System\bookings.db
+    ↓
+Server Computer
+```
+
+---
+
+## 📁 Key Files
+
+| File | Where | Why |
+|------|-------|-----|
+| TASMA_User_Setup_v2.2.exe | Installer | Install app |
+| SETUP_SERVER.py | Server | Init database |
+| ADD_USER_TO_SERVER.py | Server | Add users |
+| bookings.db | Server | Stores data |
+| config.ini | Client AppData | Connection config |
+
+---
+
+**Print this card and keep it handy!**
+
+---
+
+v2.2 | May 25, 2026 | Ready for Production

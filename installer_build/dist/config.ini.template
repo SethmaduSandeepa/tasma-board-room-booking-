@@ -1,0 +1,28 @@
+[SERVER]
+# Set database path for network deployment
+# For LOCAL use: E:\tasma_booking_syst\bookings.db
+# For NETWORK SERVER use: \\SERVER_NAME\TASMA_Data\bookings.db
+# Replace SERVER_NAME with your actual server name or IP
+database_path = \\SERVER_NAME\TASMA_Data\bookings.db
+
+# Database connection timeout in seconds (reduce for network deployments)
+db_timeout = 30
+
+# Cache settings for faster startup
+enable_cache = true
+cache_timeout = 300
+
+# UI performance settings
+lazy_load_ui = true
+preload_assets = false
+
+[LOGGING]
+# Set to true for debugging
+debug_mode = false
+log_file = tasma_app.log
+
+[PERFORMANCE]
+# Connection pool settings (reduce for network deployments to avoid slow startup)
+connection_pool_size = 2
+# Batch size for operations
+batch_size = 100

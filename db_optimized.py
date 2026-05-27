@@ -19,11 +19,18 @@ class DatabasePool:
         self.connection_pool = Queue(maxsize=pool_size)
         self.lock = threading.Lock()
         self.connections = []
+        self._is_network_path = '\\\\' in db_path or db_path.startswith('//') # Network UNC path
         
-        # Initialize pool with connections
-        for _ in range(pool_size):
+        # For network deployments, defer connection creation
+        # For local deployments, initialize connections eagerly
+        if not self._is_network_path:
+            self._initialize_connections()
+    
+    def _initialize_connections(self):
+        """Initialize the connection pool"""
+        for _ in range(self.pool_size):
             try:
-                conn = sqlite3.connect(db_path, timeout=timeout, 
+                conn = sqlite3.connect(self.db_path, timeout=self.timeout, 
                                       check_same_thread=False,
                                       isolation_level='DEFERRED')
                 conn.row_factory = sqlite3.Row
@@ -32,12 +39,13 @@ class DatabasePool:
             except Exception as e:
                 logging.error(f"Failed to create connection: {e}")
     
+    
     def get_connection(self):
         """Get a connection from the pool"""
         try:
             return self.connection_pool.get(timeout=self.timeout)
         except:
-            # If pool is empty, create a new connection
+            # If pool is empty or not initialized (network path), create a new connection
             conn = sqlite3.connect(self.db_path, timeout=self.timeout,
                                   check_same_thread=False,
                                   isolation_level='DEFERRED')
@@ -196,33 +204,42 @@ class OptimizedDatabase:
         finally:
             self.pool.return_connection(conn)
     
-    def execute_update(self, query, params=None):
-        """Execute an update/insert/delete query"""
-        conn = self.pool.get_connection()
-        try:
-            cursor = conn.cursor()
-            if params:
-                cursor.execute(query, params)
-            else:
-                cursor.execute(query)
-            conn.commit()
-            return cursor.rowcount
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
-                logging.warning(f"Database locked, retrying: {e}")
-                conn.rollback()
-                # Retry once
+    def execute_update(self, query, params=None, retries=3):
+        """Execute an update/insert/delete query with automatic retry"""
+        attempt = 0
+        last_error = None
+        
+        while attempt < retries:
+            conn = self.pool.get_connection()
+            try:
                 cursor = conn.cursor()
                 if params:
                     cursor.execute(query, params)
                 else:
                     cursor.execute(query)
                 conn.commit()
-            else:
-                conn.rollback()
-                raise
-        finally:
-            self.pool.return_connection(conn)
+                return cursor.rowcount
+            except sqlite3.OperationalError as e:
+                last_error = e
+                if 'database is locked' in str(e):
+                    attempt += 1
+                    if attempt < retries:
+                        wait_time = 0.5 * (2 ** attempt)  # Exponential backoff
+                        logging.warning(f"Database locked, retry {attempt}/{retries} after {wait_time}s: {e}")
+                        import time
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        conn.rollback()
+                        raise
+                else:
+                    conn.rollback()
+                    raise
+            finally:
+                self.pool.return_connection(conn)
+        
+        if last_error:
+            raise last_error
     
     def close(self):
         """Close all database connections"""
@@ -238,5 +255,82 @@ def get_db():
     """Get or create database instance (singleton pattern)"""
     global _db_instance
     if _db_instance is None:
-        _db_instance = OptimizedDatabase()
+        try:
+            _db_instance = OptimizedDatabase()
+        except Exception as e:
+            logging.error(f"Failed to initialize database: {e}")
+            raise
     return _db_instance
+
+def validate_network_path(db_path):
+    """
+    Validate network path accessibility
+    Returns: (is_valid, error_message)
+    """
+    import os
+    
+    # Check if it's a network path
+    if not ('\\\\' in db_path or db_path.startswith('//')):
+        return True, None  # Local path, skip network validation
+    
+    # Parse UNC path
+    parts = db_path.replace('//', '\\\\').split('\\\\')
+    if len(parts) < 4:
+        return False, "Invalid network path format"
+    
+    server = parts[1]
+    
+    # Test connectivity with ping
+    try:
+        import subprocess
+        result = subprocess.run(['ping', '-n', '1', server], 
+                              capture_output=True, timeout=5)
+        if result.returncode != 0:
+            return False, f"Server '{server}' is not reachable. Check if server is online."
+    except Exception as e:
+        logging.warning(f"Could not ping server: {e}")
+    
+    # Test path accessibility
+    try:
+        db_dir = os.path.dirname(db_path)
+        if os.path.exists(db_dir):
+            return True, None
+        else:
+            return False, f"Path not accessible: {db_dir}"
+    except Exception as e:
+        return False, f"Cannot access network path: {str(e)}"
+
+def diagnose_connection_issue(db_path, error):
+    """
+    Provide diagnostic info for connection failures
+    """
+    error_str = str(error).lower()
+    
+    suggestions = []
+    
+    if 'locked' in error_str:
+        suggestions.append("Database is locked (another user may be accessing it)")
+        suggestions.append("Wait a moment and retry")
+        suggestions.append("Increase db_timeout in config.ini")
+    
+    elif 'not found' in error_str or 'no such file' in error_str:
+        suggestions.append(f"Database file not found: {db_path}")
+        suggestions.append("Check database_path in config.ini")
+        suggestions.append("Verify server is accessible and online")
+    
+    elif 'network' in error_str or 'timeout' in error_str:
+        suggestions.append("Network connectivity issue")
+        suggestions.append("Check if server is online")
+        suggestions.append("Verify network connection")
+        suggestions.append("Increase db_timeout for slower networks")
+    
+    elif 'permission' in error_str or 'access' in error_str:
+        suggestions.append("Permission denied to access database")
+        suggestions.append("Check shared folder permissions")
+        suggestions.append("Verify you have Read/Write access")
+    
+    else:
+        suggestions.append("Check database_path in config.ini")
+        suggestions.append("Run test_network_db.py for diagnostics")
+    
+    return suggestions

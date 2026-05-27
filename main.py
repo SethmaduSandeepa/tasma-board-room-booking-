@@ -2,10 +2,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import sqlite3
 import os
+import configparser
 from datetime import datetime
 import csv
 import hashlib
 import time
+import threading
 from tkcalendar import DateEntry, Calendar
 from PIL import Image, ImageTk
 
@@ -115,10 +117,13 @@ class LoginWindow:
         self.text_secondary = "#6b7280"
         self.border_color = "#d1d5db"
         
+        # Run first-setup check in background (non-blocking)
+        threading.Thread(target=self._check_and_run_first_setup, daemon=True).start()
+        
         self.root.configure(bg=self.bg_main)
         
-        # Initialize database with users and requests tables
-        self.init_database()
+        # Flag to track if database has been initialized
+        self._db_initialized = False
         
         self.logged_in_user = None
         self.is_admin = False
@@ -128,46 +133,20 @@ class LoginWindow:
         main_frame = tk.Frame(root, bg=self.bg_main)
         main_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        # Logo
-        logo_frame = tk.Frame(main_frame, bg=self.bg_main)
-        logo_frame.pack(pady=20)
+        # Logo - Display text immediately, load image asynchronously
+        self.logo_frame = tk.Frame(main_frame, bg=self.bg_main)
+        self.logo_frame.pack(pady=20)
         
-        logo_loaded = False
-        try:
-            # Get the directory where the app/executable is located
-            import sys
-            if getattr(sys, 'frozen', False):
-                # Running as PyInstaller bundle - use executable directory for data
-                app_dir = os.path.dirname(sys.executable)
-            else:
-                # Running as normal Python script
-                app_dir = os.path.dirname(os.path.abspath(__file__))
-            
-            logo_path = os.path.join(app_dir, 'tasma_logo.webp')
-            
-            # Try to load and display logo image
-            if os.path.exists(logo_path):
-                try:
-                    logo_img = Image.open(logo_path)
-                    logo_img = logo_img.resize((280, 180), Image.Resampling.LANCZOS)
-                    self.logo_photo = ImageTk.PhotoImage(logo_img)
-                    logo_label = tk.Label(logo_frame, image=self.logo_photo, bg=self.bg_main)
-                    logo_label.image = self.logo_photo  # Keep a reference
-                    logo_label.pack()
-                    logo_loaded = True
-                except Exception as img_error:
-                    print(f"Failed to load image from {logo_path}: {str(img_error)}")
-            else:
-                print(f"Logo file not found at: {logo_path}")
-                
-        except Exception as e:
-            print(f"Error loading logo: {str(e)}")
+        # Show text logo immediately (instant UI)
+        self.logo_label = tk.Label(self.logo_frame, text="🏢 TASMA", font=("Helvetica", 28, "bold"),
+                                   fg=self.accent_blue, bg=self.bg_main)
+        self.logo_label.pack()
         
-        # Fallback to text if image not loaded
-        if not logo_loaded:
-            logo_label = tk.Label(logo_frame, text="🏢 TASMA", font=("Helvetica", 28, "bold"),
-                                 fg=self.accent_blue, bg=self.bg_main)
-            logo_label.pack()
+        # Lazy initialize database on first login attempt
+        self.root.after(100, self._ensure_db_initialized)
+        
+        # Load actual logo image asynchronously after UI is shown (200ms delay)
+        self.root.after(200, self._load_logo_async)
         
         subtitle = tk.Label(main_frame, text="Board Room Booking System", 
                           font=("Arial", 11), fg=self.text_secondary, bg=self.bg_main)
@@ -440,26 +419,274 @@ class LoginWindow:
         conn.commit()
         conn.close()
     
+    def _ensure_db_initialized(self):
+        """Ensure database is initialized (called lazily)"""
+        if not self._db_initialized:
+            try:
+                self.init_database()
+                self._db_initialized = True
+            except Exception as e:
+                print(f"Failed to initialize database: {e}")
+    
+    def _load_logo_async(self):
+        """Load logo image asynchronously without blocking UI"""
+        try:
+            import sys
+            # Get the directory where the app/executable is located
+            if getattr(sys, 'frozen', False):
+                # Running as PyInstaller bundle - use executable directory for data
+                app_dir = os.path.dirname(sys.executable)
+            else:
+                # Running as normal Python script
+                app_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            logo_path = os.path.join(app_dir, 'tasma_logo.webp')
+            
+            # Load and display logo if file exists
+            if os.path.exists(logo_path):
+                try:
+                    logo_img = Image.open(logo_path)
+                    logo_img = logo_img.resize((280, 180), Image.Resampling.LANCZOS)
+                    self.logo_photo = ImageTk.PhotoImage(logo_img)
+                    
+                    # Replace text logo with image logo
+                    self.logo_label.config(image=self.logo_photo, text="")
+                    self.logo_label.image = self.logo_photo  # Keep a reference
+                    
+                except Exception as img_error:
+                    # Keep text logo if image fails to load
+                    pass
+        except Exception as e:
+            # Keep text logo as fallback
+            pass
+    
+    def _check_and_run_first_setup(self):
+        """Check if first-run setup is needed and run if necessary (non-blocking)"""
+        import sys
+        config_file = self._get_config_file()
+        
+        # Check if config.ini exists and has server database path
+        server_db_path = r"\\GVBSERVER\C$\Users\Administrator\AppData\Roaming\TASMA\bookings.db"
+        has_server_config = False
+        
+        try:
+            if os.path.exists(config_file):
+                config = configparser.ConfigParser()
+                config.read(config_file)
+                if config.has_option('Database', 'database_path'):
+                    db_path = config.get('Database', 'database_path')
+                    if 'GVBSERVER' in db_path:
+                        has_server_config = True
+        except:
+            pass
+        
+        # If no server config, show setup wizard (non-blocking via after)
+        if not has_server_config:
+            # Schedule setup to run after login UI is visible (50ms delay)
+            self.root.after(50, lambda: self._show_first_run_setup(server_db_path, config_file))
+    
+    def _get_config_file(self):
+        """Get the config file path"""
+        import sys
+        if getattr(sys, 'frozen', False):
+            app_data = os.getenv('APPDATA')
+            app_dir = os.path.join(app_data, 'TASMA')
+            if not os.path.exists(app_dir):
+                os.makedirs(app_dir)
+            return os.path.join(app_dir, 'config.ini')
+        else:
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+            return os.path.join(app_dir, 'config.ini')
+    
+    def _show_first_run_setup(self, server_db_path, config_file):
+        """Show first-run setup wizard"""
+        import sys
+        # Create a setup window
+        setup_window = tk.Toplevel(self.root)
+        setup_window.title("TASMA - First Run Setup")
+        setup_window.geometry("600x450")
+        setup_window.resizable(False, False)
+        
+        # Center on screen
+        x = (self.root.winfo_screenwidth() // 2) - (300)
+        y = (self.root.winfo_screenheight() // 2) - (225)
+        setup_window.geometry(f"+{x}+{y}")
+        setup_window.transient(self.root)
+        setup_window.grab_set()
+        
+        # Setup frame
+        setup_frame = tk.Frame(setup_window, bg="#f5f7fa", highlightthickness=0)
+        setup_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Title
+        title = tk.Label(setup_frame, text="Welcome to TASMA", 
+                        font=("Arial", 18, "bold"), fg="#0052cc", bg="#f5f7fa")
+        title.pack(pady=(0, 5))
+        
+        # Subtitle
+        subtitle = tk.Label(setup_frame, text="Configuring Server Connection", 
+                           font=("Arial", 11), fg="#6b7280", bg="#f5f7fa")
+        subtitle.pack(pady=(0, 20))
+        
+        # Status text frame
+        status_frame = tk.Frame(setup_frame, bg="#ffffff", relief="solid", bd=1)
+        status_frame.pack(fill="both", expand=True, pady=(0, 15))
+        
+        status_text = tk.Text(status_frame, height=12, width=70, bg="#ffffff", 
+                             fg="#1f2937", font=("Courier", 9), relief="flat",
+                             wrap="word", state="disabled")
+        status_text.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Function to update status
+        def add_status(message):
+            status_text.config(state="normal")
+            status_text.insert("end", message + "\n")
+            status_text.see("end")
+            status_text.config(state="disabled")
+            setup_window.update()
+        
+        # Start setup process
+        add_status("🔧 SERVER CONNECTION SETUP\n")
+        add_status(f"Server: GVBSERVER")
+        add_status(f"Database: {server_db_path}\n")
+        
+        # Test network path
+        add_status("Testing network connection...")
+        network_ok = False
+        try:
+            # Use shorter timeout (2 seconds instead of blocking indefinitely)
+            # Check in a non-blocking way using threading
+            import threading
+            path_check_result = [False]
+            def check_path():
+                try:
+                    # Quick check with timeout
+                    if os.path.exists(server_db_path):
+                        path_check_result[0] = True
+                except:
+                    pass
+            
+            thread = threading.Thread(target=check_path, daemon=True)
+            thread.start()
+            thread.join(timeout=2.0)  # Wait max 2 seconds
+            
+            if path_check_result[0]:
+                add_status("✓ Network path accessible\n")
+                network_ok = True
+            else:
+                add_status("⚠ Network path not accessible (server may be offline)")
+                add_status("  Will configure for when server is available\n")
+        except Exception as e:
+            add_status(f"⚠ Network test skipped: {str(e)}\n")
+        
+        # Test database
+        if network_ok:
+            add_status("Testing database connection...")
+            try:
+                # Use shorter timeout (5 seconds instead of 10)
+                conn = sqlite3.connect(server_db_path, timeout=5.0)
+                conn.execute("PRAGMA busy_timeout=5000")
+                cursor = conn.cursor()
+                cursor.execute("SELECT COUNT(*) FROM users")
+                user_count = cursor.fetchone()[0]
+                conn.close()
+                add_status(f"✓ Database connection successful")
+                add_status(f"  Users in database: {user_count}\n")
+            except Exception as e:
+                add_status(f"⚠ Database test: {str(e)}\n")
+        
+        # Create config
+        add_status("Creating configuration file...")
+        try:
+            config = configparser.ConfigParser()
+            config['Database'] = {
+                'database_path': server_db_path,
+                'db_timeout': '30',
+                'connection_pool_size': '3',
+                'enable_cache': 'true',
+                'cache_ttl': '300'
+            }
+            config['Network'] = {
+                'server_name': 'GVBSERVER',
+                'is_client': 'true',
+                'retry_attempts': '3',
+                'retry_delay': '1'
+            }
+            config['User'] = {
+                'theme': 'light',
+                'auto_login': 'false',
+                'notifications': 'true'
+            }
+            
+            with open(config_file, 'w') as f:
+                config.write(f)
+            add_status(f"✓ Configuration saved to:")
+            add_status(f"  {config_file}\n")
+        except Exception as e:
+            add_status(f"✗ Configuration error: {str(e)}\n")
+        
+        add_status("✓ Setup complete!")
+        add_status("Click 'Continue' to proceed to login.\n")
+        add_status("NOTE: If you encounter login errors,")
+        add_status("verify the server is running and accessible.")
+        
+        # Button
+        continue_btn = tk.Button(setup_frame, text="✓ Continue to Login",
+                                command=setup_window.destroy,
+                                bg="#0052cc", fg="white", font=("Arial", 11, "bold"),
+                                cursor="hand2", relief="flat", bd=0, pady=10)
+        continue_btn.pack(fill="x", pady=(10, 0))
+    
     def hash_password(self, password):
         """Hash password using SHA256"""
         return hashlib.sha256(password.encode()).hexdigest()
     
     def get_db_path(self):
-        """Get absolute path to database file"""
+        """Get database path - checks config.ini first for server path"""
         import sys
+        import configparser
+        
+        # Check for config.ini with server database path
+        config_file = None
         if getattr(sys, 'frozen', False):
-            # Running as PyInstaller bundle - store database in AppData for write permissions
+            # Running as PyInstaller bundle
             app_data = os.getenv('APPDATA')
             app_dir = os.path.join(app_data, 'TASMA')
+            config_file = os.path.join(app_dir, 'config.ini')
             if not os.path.exists(app_dir):
                 os.makedirs(app_dir)
         else:
             # Running as normal Python script
             app_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(app_dir, "bookings.db")
+            config_file = os.path.join(app_dir, 'config.ini')
+        
+        # Try to read server database path from config
+        try:
+            if os.path.exists(config_file):
+                config = configparser.ConfigParser()
+                config.read(config_file)
+                if config.has_option('Database', 'database_path'):
+                    db_path = config.get('Database', 'database_path')
+                    print(f"Using server database: {db_path}")
+                    return db_path
+        except Exception as e:
+            print(f"Warning: Could not read config.ini: {e}")
+        
+        # Fallback to local database in AppData
+        if getattr(sys, 'frozen', False):
+            app_data = os.getenv('APPDATA')
+            app_dir = os.path.join(app_data, 'TASMA')
+            if not os.path.exists(app_dir):
+                os.makedirs(app_dir)
+        else:
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        local_db = os.path.join(app_dir, "bookings.db")
+        print(f"Using local database: {local_db}")
+        return local_db
     
     def login(self):
-        """Authenticate user login"""
+        """Authenticate user login - runs in background thread"""
         username = self.login_user.get().strip()
         password = self.login_pass.get()
         
@@ -467,27 +694,55 @@ class LoginWindow:
             messagebox.showerror("Error", "Please enter username and password")
             return
         
-        try:
-            conn = sqlite3.connect(self.get_db_path(), timeout=30.0)
-            conn.execute("PRAGMA busy_timeout=30000")
-            cursor = conn.cursor()
-            
-            hashed_password = self.hash_password(password)
-            cursor.execute("SELECT id, role, department FROM users WHERE username=? AND password=? AND role='user'",
-                         (username, hashed_password))
-            user = cursor.fetchone()
-            conn.close()
-            
-            if user:
-                self.logged_in_user = username
-                self.is_admin = False
-                self.user_department = user[2] if len(user) > 2 else None  # Store department
-                messagebox.showinfo("Success", f"Welcome, {username}!")
-                self.root.destroy()
-            else:
-                messagebox.showerror("Error", "Invalid username or password, or account not approved yet")
-        except Exception as e:
-            messagebox.showerror("Error", f"Login failed:\n{str(e)}")
+        # Show "Connecting..." dialog
+        progress = tk.Toplevel(self.root)
+        progress.title("Logging in...")
+        progress.geometry("300x100")
+        progress.resizable(False, False)
+        tk.Label(progress, text="Connecting to database...", font=("Arial", 10)).pack(pady=20)
+        progress.update()
+        
+        # Run login in background thread to prevent UI freeze
+        def login_worker():
+            try:
+                # Ensure database is initialized before login attempt
+                self._ensure_db_initialized()
+                
+                conn = sqlite3.connect(self.get_db_path(), timeout=30.0)
+                conn.execute("PRAGMA busy_timeout=30000")
+                cursor = conn.cursor()
+                
+                hashed_password = self.hash_password(password)
+                cursor.execute("SELECT id, role, department FROM users WHERE username=? AND password=? AND role='user'",
+                             (username, hashed_password))
+                user = cursor.fetchone()
+                conn.close()
+                
+                # Close progress dialog
+                try:
+                    progress.destroy()
+                except:
+                    pass
+                
+                if user:
+                    self.logged_in_user = username
+                    self.is_admin = False
+                    self.user_department = user[2] if len(user) > 2 else None  # Store department
+                    messagebox.showinfo("Success", f"Welcome, {username}!")
+                    self.root.destroy()
+                else:
+                    messagebox.showerror("Error", "Invalid username or password, or account not approved yet")
+            except Exception as e:
+                try:
+                    progress.destroy()
+                except:
+                    pass
+                messagebox.showerror("Error", f"Login failed:\n{str(e)}")
+        
+        # Start login in background thread
+        import threading
+        login_thread = threading.Thread(target=login_worker, daemon=True)
+        login_thread.start()
     def register(self):
         """Submit new user registration request"""
         full_name = self.reg_name.get().strip()
@@ -577,7 +832,7 @@ class LoginWindow:
     
     
     def admin_login(self):
-        """Admin login"""
+        """Admin login - runs in background thread"""
         username = self.admin_user.get().strip()
         password = self.admin_pass.get()
         
@@ -585,27 +840,55 @@ class LoginWindow:
             messagebox.showerror("Error", "Please enter admin credentials")
             return
         
-        try:
-            conn = sqlite3.connect(self.get_db_path(), timeout=30.0)
-            conn.execute("PRAGMA busy_timeout=30000")
-            cursor = conn.cursor()
-            
-            hashed_password = self.hash_password(password)
-            cursor.execute("SELECT id FROM users WHERE username=? AND password=? AND role='admin'",
-                         (username, hashed_password))
-            admin = cursor.fetchone()
-            
-            if admin:
-                conn.close()
-                self.logged_in_user = username
-                self.is_admin = True
-                messagebox.showinfo("Success", f"Welcome, Admin {username}!")
-                self.root.destroy()
-            else:
-                conn.close()
-                messagebox.showerror("Error", "Invalid admin credentials")
-        except Exception as e:
-            messagebox.showerror("Error", f"Admin login failed:\n{str(e)}")
+        # Show "Connecting..." dialog
+        progress = tk.Toplevel(self.root)
+        progress.title("Logging in...")
+        progress.geometry("300x100")
+        progress.resizable(False, False)
+        tk.Label(progress, text="Connecting to database...", font=("Arial", 10)).pack(pady=20)
+        progress.update()
+        
+        # Run login in background thread to prevent UI freeze
+        def admin_login_worker():
+            try:
+                # Ensure database is initialized before login attempt
+                self._ensure_db_initialized()
+                
+                conn = sqlite3.connect(self.get_db_path(), timeout=30.0)
+                conn.execute("PRAGMA busy_timeout=30000")
+                cursor = conn.cursor()
+                
+                hashed_password = self.hash_password(password)
+                cursor.execute("SELECT id FROM users WHERE username=? AND password=? AND role='admin'",
+                             (username, hashed_password))
+                admin = cursor.fetchone()
+                
+                # Close progress dialog
+                try:
+                    progress.destroy()
+                except:
+                    pass
+                
+                if admin:
+                    conn.close()
+                    self.logged_in_user = username
+                    self.is_admin = True
+                    messagebox.showinfo("Success", f"Welcome, Admin {username}!")
+                    self.root.destroy()
+                else:
+                    conn.close()
+                    messagebox.showerror("Error", "Invalid admin credentials")
+            except Exception as e:
+                try:
+                    progress.destroy()
+                except:
+                    pass
+                messagebox.showerror("Error", f"Admin login failed:\n{str(e)}")
+        
+        # Start login in background thread
+        import threading
+        login_thread = threading.Thread(target=admin_login_worker, daemon=True)
+        login_thread.start()
 
 class AdminPanel:
     """Admin interface to manage user registration requests and bookings"""
@@ -640,7 +923,8 @@ class AdminPanel:
         else:
             # Running as normal Python script
             app_dir = os.path.dirname(os.path.abspath(__file__))
-        self.db_name = os.path.join(app_dir, "bookings.db")
+        # Use server database path if available, otherwise local
+        self.db_name = self.get_db_path()
         
         # Initialize database tables
         self.init_database()
@@ -1325,7 +1609,8 @@ class TasmaBookingApp:
             # Running as normal Python script
             app_dir = os.path.dirname(os.path.abspath(__file__))
         
-        self.db_name = os.path.join(app_dir, "bookings.db")
+        # Use server database path if available, otherwise local
+        self.db_name = self.get_db_path()
         self.init_database()
         
         self.selected_booking_id = None
@@ -1903,6 +2188,50 @@ class TasmaBookingApp:
         btn.pack(side=side, padx=8)
         return btn
 
+    def get_db_path(self):
+        """Get database path - checks config.ini first for server path"""
+        import sys
+        import configparser
+        
+        # Check for config.ini with server database path
+        config_file = None
+        if getattr(sys, 'frozen', False):
+            # Running as PyInstaller bundle
+            app_data = os.getenv('APPDATA')
+            app_dir = os.path.join(app_data, 'TASMA')
+            config_file = os.path.join(app_dir, 'config.ini')
+            if not os.path.exists(app_dir):
+                os.makedirs(app_dir)
+        else:
+            # Running as normal Python script
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+            config_file = os.path.join(app_dir, 'config.ini')
+        
+        # Try to read server database path from config
+        try:
+            if os.path.exists(config_file):
+                config = configparser.ConfigParser()
+                config.read(config_file)
+                if config.has_option('Database', 'database_path'):
+                    db_path = config.get('Database', 'database_path')
+                    print(f"Using server database: {db_path}")
+                    return db_path
+        except Exception as e:
+            print(f"Warning: Could not read config.ini: {e}")
+        
+        # Fallback to local database in AppData
+        if getattr(sys, 'frozen', False):
+            app_data = os.getenv('APPDATA')
+            app_dir = os.path.join(app_data, 'TASMA')
+            if not os.path.exists(app_dir):
+                os.makedirs(app_dir)
+        else:
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        local_db = os.path.join(app_dir, "bookings.db")
+        print(f"Using local database: {local_db}")
+        return local_db
+
     def init_database(self):
         """Create the database and table if they don't exist"""
         conn = sqlite3.connect(self.db_name, timeout=30.0)
@@ -1972,12 +2301,19 @@ class TasmaBookingApp:
             messagebox.showerror("Date Error", f"Please select a valid date")
             return
         
-        # Get time from spinboxes
-        hour = self.hour_var.get()
-        minute = self.minute_var.get()
+        # Get time from spinboxes - read directly from widget to capture typed values
+        try:
+            hour_text = self.hour_spinbox.get().strip()
+            minute_text = self.minute_spinbox.get().strip()
+            hour = int(hour_text) if hour_text else 0
+            minute = int(minute_text) if minute_text else 0
+        except ValueError:
+            messagebox.showerror("Time Error", "Please enter valid hour (0-23) and minute (0-59) values")
+            return
+        
         # Validate values
         if not (0 <= hour <= 23 and 0 <= minute <= 59):
-            messagebox.showerror("Time Error", "Invalid time values")
+            messagebox.showerror("Time Error", f"Invalid time values: Hour must be 0-23, Minute must be 0-59 (got {hour}:{minute:02d})")
             return
         time = f"{hour:02d}:{minute:02d}"
         
@@ -2081,10 +2417,12 @@ class TasmaBookingApp:
                     
                     self.calendar_widget.selection_set(booked_date)
                     self.root.update()  # Force UI update again
-                    self.on_calendar_selected(None)
+                    # Add small delay to ensure calendar selection is processed before refreshing display
+                    self.root.after(100, lambda: self.on_calendar_selected(None))
                 except Exception as e:
                     self.update_status(f"Calendar display error: {str(e)}")
-                    self.on_calendar_selected(None)
+                    # Add small delay here too for consistency
+                    self.root.after(100, lambda: self.on_calendar_selected(None))
                 
                 break  # Success, exit retry loop
                 

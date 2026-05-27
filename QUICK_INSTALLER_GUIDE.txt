@@ -1,0 +1,98 @@
+# Quick Installer Build - Step by Step
+
+## Super Quick Start
+
+```bash
+# 1. Run builder (creates executable bundle)
+.\build_user_installer.bat
+
+# 2. Install Inno Setup (if not already installed)
+#    Download from: https://jrsoftware.org/isinfo.php
+
+# 3. Compile installer with Inno Setup
+#    Open: TASMA_User_Installer.iss
+#    Click: Build > Compile
+
+# 4. Done!
+#    Installer: setup_output\TASMA_User_Setup_v2.0.exe
+```
+
+---
+
+## What Users Get
+
+Click `TASMA_User_Setup_v2.0.exe` → Automatic installation:
+
+✓ TASMA application
+✓ Database modules
+✓ Configuration wizard
+✓ Desktop shortcut
+✓ All documentation
+
+---
+
+## Installation Flow for Users
+
+```
+1. User downloads: TASMA_User_Setup_v2.0.exe
+2. Double-click to run installer
+3. Choose installation location (default: C:\Program Files\TASMA)
+4. Click Install
+5. Configuration wizard runs automatically
+6. User enters server name/IP
+7. Connection tested
+8. User can launch TASMA from desktop
+```
+
+---
+
+## One-Liner Build (If You Have Everything)
+
+```bash
+build_user_installer.bat && echo Build complete! Now use Inno Setup to compile TASMA_User_Installer.iss
+```
+
+---
+
+## Files Involved
+
+| Step | File | Action |
+|------|------|--------|
+| 1 | `build_user_installer.bat` | Run this |
+| 2 | Inno Setup | Download & install |
+| 3 | `TASMA_User_Installer.iss` | Open in Inno Setup |
+| 4 | Inno Setup | Click Compile |
+| 5 | `setup_output\*.exe` | Send to users |
+
+---
+
+## Where to Find the Final Installer
+
+After building:
+```
+setup_output\TASMA_User_Setup_v2.0.exe
+```
+
+This is what you send to users.
+
+---
+
+## Troubleshooting
+
+**"build_user_installer.bat" won't run?**
+- Run Command Prompt as Administrator
+- Navigate to project folder
+- Run: `build_user_installer.bat`
+
+**"Inno Setup won't compile"?**
+- Make sure `build_user_installer.bat` completed successfully
+- Check that `installer_build\dist\` folder exists
+- Reinstall Inno Setup if needed
+
+**"TASMA.exe won't run"?**
+- Requires Python modules on target machine, OR
+- Convert to fully standalone EXE (advanced option)
+
+---
+
+See `INSTALLER_BUILD_GUIDE.md` for complete details.

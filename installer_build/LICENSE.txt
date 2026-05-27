@@ -1,0 +1,16 @@
+TASMA Board Room Booking System - License Agreement
+
+Version 2.0
+Copyright © 2024 TASMA Group
+
+This software is provided "as-is" for organizational use.
+
+Permission is granted to use this software for managing board room bookings
+within your organization.
+
+Restrictions:
+- Do not modify or distribute without permission
+- Do not reverse engineer the application
+- Use only for legitimate business purposes
+
+For licensing inquiries, contact: license@tasmagroup.com

@@ -1,0 +1,100 @@
+# TASMA v2.2 - Client Setup Quick Reference Card
+
+## For User Computers (Not the Server)
+
+### ⚡ Quick Setup (2 minutes)
+
+#### After Installing TASMA:
+
+1. **Find the setup script:**
+   ```
+   C:\Program Files\TASMA\SETUP_SERVER_CLIENT.py
+   ```
+
+2. **Run it (double-click or in Command Prompt):**
+   ```
+   python SETUP_SERVER_CLIENT.py
+   ```
+
+3. **Follow prompts** → Answer "y" if network tests pass
+
+4. **Restart TASMA** → Should now connect to server ✓
+
+---
+
+## What Gets Configured
+
+| Item | Value |
+|------|-------|
+| **Server** | GVBSERVER |
+| **Database** | \\GVBSERVER\C$\Users\Administrator\AppData\Roaming\TASMA\bookings.db |
+| **Config File** | C:\Users\[YOU]\AppData\Roaming\TASMA\config.ini |
+
+---
+
+## ✓ Success Signs
+
+After setup, when you launch TASMA:
+- ✓ Login window appears instantly
+- ✓ Your username/password work
+- ✓ You see your name in welcome message
+- ✓ Bookings from server are visible
+
+## ✗ Common Issues
+
+| Problem | Fix |
+|---------|-----|
+| "Network path NOT found" | Ping GVBSERVER, check network |
+| "Database connection failed" | Wait a few seconds, retry setup |
+| Still shows old error | Delete `C:\Users\[YOU]\AppData\Roaming\TASMA\bookings.db` |
+| Can't find script | Look in `C:\Program Files\TASMA\` folder |
+
+---
+
+## Technical Details
+
+**Network Path Format:**
+```
+\\GVBSERVER\C$\Users\Administrator\AppData\Roaming\TASMA\bookings.db
+```
+
+**Config Location:**
+```
+C:\Users\[YOUR-USERNAME]\AppData\Roaming\TASMA\config.ini
+```
+
+**Database Timeout:** 30 seconds  
+**Connection Pool:** 3 connections  
+**Cache TTL:** 300 seconds  
+
+---
+
+## Still Need Help?
+
+1. **Verify network connection:**
+   ```
+   ping GVBSERVER
+   ```
+
+2. **Check if you can access server:**
+   - Press `Windows + R`
+   - Type: `\\GVBSERVER`
+   - Should show server folder
+
+3. **If server is down:** Wait for server to restart
+
+4. **Contact:** System Administrator
+
+---
+
+**Version:** 2.2  
+**Date:** May 25, 2026
+
+---
+
+## One-Time Setup Only!
+
+After running `SETUP_SERVER_CLIENT.py` once:
+- Configuration is saved
+- No need to run setup again
+- Just launch TASMA normally
